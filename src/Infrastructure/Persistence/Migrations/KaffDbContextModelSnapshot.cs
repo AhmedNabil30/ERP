@@ -2371,6 +2371,75 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.ToTable("suppliers", (string)null);
                 });
 
+            modelBuilder.Entity("Kaff.Domain.PettyCash.PettyCashRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("purpose");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("ReturnReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("return_reason");
+
+                    b.Property<DateTimeOffset?>("ReturnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("returned_at");
+
+                    b.Property<Guid?>("ReturnedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("returned_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<Guid?>("SubmittedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submitted_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("ReturnedByUserId");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.HasIndex("ProjectId", "Status");
+
+                    b.ToTable("petty_cash_requests", (string)null);
+                });
+
             modelBuilder.Entity("Kaff.Domain.Projects.Project", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3521,6 +3590,31 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.HasOne("Kaff.Domain.MasterData.Bab", null)
                         .WithMany()
                         .HasForeignKey("TradeBabId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.PettyCash.PettyCashRequest", b =>
+                {
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReturnedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
