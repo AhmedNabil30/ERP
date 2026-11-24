@@ -29,6 +29,9 @@ namespace Kaff.Infrastructure.Persistence.Migrations
             modelBuilder.HasSequence("employee_code_seq")
                 .StartsAt(10001L);
 
+            modelBuilder.HasSequence("opportunity_code_seq")
+                .StartsAt(10001L);
+
             modelBuilder.HasSequence("subcontractor_code_seq")
                 .StartsAt(10001L);
 

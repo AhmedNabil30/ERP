@@ -1,5 +1,6 @@
 using Kaff.Domain.Common;
 using Kaff.Domain.MasterData;
+using Kaff.Domain.Rulings;
 
 namespace Kaff.Domain.Sales;
 
@@ -44,6 +45,24 @@ public enum OpportunityStatus
 
     /// <summary>MUST carry a reason (spec.md §3).</summary>
     ClosedLost = 5,
+}
+
+/// <summary>
+/// How quiet a live opportunity is, derived on read from <see cref="Opportunity.LastActivityAt"/> and the
+/// <see cref="OpportunityInactivity"/> day counts (spec.md §3). Never stored.
+/// </summary>
+public enum InactivityLevel
+{
+    None = 0,
+
+    /// <summary>Day-2 flag.</summary>
+    FirstAlert = 1,
+
+    /// <summary>Day-4 flag.</summary>
+    SecondAlert = 2,
+
+    /// <summary>Day-7: shown as <see cref="OpportunityStatus.Stalled"/>.</summary>
+    Stalled = 3,
 }
 
 /// <summary>
@@ -125,15 +144,116 @@ public sealed class Opportunity : Entity
         }
     }
 
+    /// <summary>True while the opportunity can still move: Active, or Stalled by the stored flag.</summary>
+    public bool IsLive => Status is OpportunityStatus.Active or OpportunityStatus.Stalled;
+
+    /// <summary>
+    /// How quiet the opportunity is at <paramref name="now"/>. Computed on read, never stored (R3-03 AC-C).
+    /// An OnHold or closed opportunity never flags (R3-03 AC-E).
+    /// </summary>
+    public InactivityLevel InactivityAt(DateTimeOffset now, OpportunityInactivity rule)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        if (!IsLive)
+        {
+            return InactivityLevel.None;
+        }
+
+        TimeSpan quiet = now - LastActivityAt;
+
+        if (Status == OpportunityStatus.Stalled || quiet >= TimeSpan.FromDays(rule.StalledDays))
+        {
+            return InactivityLevel.Stalled;
+        }
+
+        if (quiet >= TimeSpan.FromDays(rule.SecondAlertDays))
+        {
+            return InactivityLevel.SecondAlert;
+        }
+
+        return quiet >= TimeSpan.FromDays(rule.FirstAlertDays) ? InactivityLevel.FirstAlert : InactivityLevel.None;
+    }
+
+    /// <summary>The status to show: a quiet Active opportunity reads as Stalled once the window has passed.</summary>
+    public OpportunityStatus StatusAt(DateTimeOffset now, OpportunityInactivity rule) =>
+        InactivityAt(now, rule) == InactivityLevel.Stalled ? OpportunityStatus.Stalled : Status;
+
+    /// <summary>spec.md §3: one stage forward at a time, Lead to Contract. A move is activity.</summary>
+    public Result AdvanceStage(DateTimeOffset occurredAt)
+    {
+        if (!IsLive)
+        {
+            return Result.Failure(SalesErrors.OpportunityNotLive);
+        }
+
+        if (Stage == OpportunityStage.Contract)
+        {
+            return Result.Failure(SalesErrors.AlreadyAtLastStage);
+        }
+
+        Stage++;
+        RecordActivity(occurredAt);
+        return Result.Success();
+    }
+
+    /// <summary>spec.md §13: OnHold. The stage is untouched, so resuming returns to the same stage.</summary>
+    public Result PutOnHold(DateTimeOffset occurredAt)
+    {
+        if (!IsLive)
+        {
+            return Result.Failure(SalesErrors.OpportunityNotLive);
+        }
+
+        Status = OpportunityStatus.OnHold;
+        LastActivityAt = occurredAt;
+        return Result.Success();
+    }
+
+    /// <summary>Leaves OnHold at the same stage. The clock restarts, or it would stall at once.</summary>
+    public Result Resume(DateTimeOffset occurredAt)
+    {
+        if (Status != OpportunityStatus.OnHold)
+        {
+            return Result.Failure(SalesErrors.OpportunityNotOnHold);
+        }
+
+        Status = OpportunityStatus.Active;
+        LastActivityAt = occurredAt;
+        return Result.Success();
+    }
+
     public Result CloseLost(string reason, DateTimeOffset occurredAt)
     {
-        if (string.IsNullOrWhiteSpace(reason) || reason.Length > MaxReasonLength)
+        if (Status is OpportunityStatus.ClosedLost or OpportunityStatus.ClosedWon)
+        {
+            return Result.Failure(SalesErrors.OpportunityAlreadyClosed);
+        }
+
+        if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > MaxReasonLength)
         {
             return Result.Failure(MasterDataErrors.ClosedLostRequiresReason);
         }
 
         Status = OpportunityStatus.ClosedLost;
         ClosedLostReason = reason.Trim();
+        LastActivityAt = occurredAt;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// spec.md §3: reopening attaches to the same client; nothing here can create one. The stage it was
+    /// closed at is kept. The row drops the old reason; the audit record of the close keeps it.
+    /// </summary>
+    public Result Reopen(DateTimeOffset occurredAt)
+    {
+        if (Status != OpportunityStatus.ClosedLost)
+        {
+            return Result.Failure(SalesErrors.OpportunityNotClosedLost);
+        }
+
+        Status = OpportunityStatus.Active;
+        ClosedLostReason = null;
         LastActivityAt = occurredAt;
         return Result.Success();
     }

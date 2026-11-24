@@ -187,6 +187,9 @@ public sealed record RulingSet
 
     public ClientDecidesChangeOrders ClientDecidesChangeOrders { get; init; } = ClientDecidesChangeOrders.Default;
 
+    /// <summary>R3-03: the quiet-day counts of the sales pipeline (R3-Q5).</summary>
+    public OpportunityInactivity OpportunityInactivity { get; init; } = OpportunityInactivity.Default;
+
     public IReadOnlyList<RulingNote> Notes =>
     [
         MaterialAdvanceRecovery.Note,
@@ -252,5 +255,6 @@ public sealed record RulingSet
         PortalExtractVisibility.Note,
         PhotoPublishers.Note,
         ClientDecidesChangeOrders.Note,
+        OpportunityInactivity.Note,
     ];
 }
