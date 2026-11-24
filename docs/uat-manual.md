@@ -20,7 +20,7 @@ There are seven people to sign in as. Each one sees a different system, because 
 | Technical office | `tech_office_demo` | `Demo#Tech1New` |
 | Technical office, second person | `tech_office2_demo` | `Demo#Tech2New` |
 | Accounts | `accounts_demo` | `Demo#Acct1New` |
-| Client, portal (a phone number is the user name) | `01012340010` | `Demo#Portal2`, a temporary password: the first sign-in asks for a new one |
+| Client, portal (a phone number is the user name) | `01012340010` | `Demo#Portal2` when the script creates it, a temporary password: the first sign-in asks for a new one. On the shared dev database it was changed on 2026-11-24 to `Kaff#Portal2026` |
 
 If the client sign-in is missing, the person running the system creates it with `node scripts/seed-demo-portal.mjs` (local API only).
 
