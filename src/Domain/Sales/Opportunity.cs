@@ -179,7 +179,7 @@ public sealed class Opportunity : Entity
     public OpportunityStatus StatusAt(DateTimeOffset now, OpportunityInactivity rule) =>
         InactivityAt(now, rule) == InactivityLevel.Stalled ? OpportunityStatus.Stalled : Status;
 
-    /// <summary>spec.md §3: one stage forward at a time, Lead to Contract. A move is activity.</summary>
+    /// <summary>spec.md §3: one stage forward at a time, Lead to Negotiation. Contract is reached only by converting to a project (R3-09, Nabil 2026-11-24). A move is activity.</summary>
     public Result AdvanceStage(DateTimeOffset occurredAt)
     {
         if (!IsLive)
@@ -187,7 +187,7 @@ public sealed class Opportunity : Entity
             return Result.Failure(SalesErrors.OpportunityNotLive);
         }
 
-        if (Stage == OpportunityStage.Contract)
+        if (Stage == OpportunityStage.Negotiation)
         {
             return Result.Failure(SalesErrors.AlreadyAtLastStage);
         }

@@ -126,13 +126,17 @@ internal static class Handler
         return Result.Success(TrialBalance.Build(accounts, debits, credits));
     }
 
+    // The CSV is a file for Excel, not a screen, so its words sit here as constants rather than in the i18n JSON. Arabic only: the UI is Arabic.
+    private const string CsvHeader = "الرمز,الاسم بالعربية,الاسم بالإنجليزية,النوع,التصنيف,المشروع,مدين,دائن";
+    private const string CsvTotalLabel = "الإجمالي";
+
     /// <summary>UTF-8 with a byte-order mark, so Excel reads the Arabic names. Figures show two decimals; the stored four are untouched.</summary>
     public static byte[] ToCsv(TrialBalanceResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
 
         StringBuilder csv = new();
-        csv.Append("Code,NameAr,NameEn,Type,Class,Project,Debit,Credit\r\n");
+        csv.Append(CsvHeader).Append("\r\n");
 
         foreach (TrialBalanceRow row in result.Rows)
         {
@@ -146,7 +150,7 @@ internal static class Handler
                 .Append(Figure(row.Credit)).Append("\r\n");
         }
 
-        csv.Append("Total,,,,,,").Append(Figure(result.TotalDebit)).Append(',').Append(Figure(result.TotalCredit)).Append("\r\n");
+        csv.Append(CsvTotalLabel).Append(",,,,,,").Append(Figure(result.TotalDebit)).Append(',').Append(Figure(result.TotalCredit)).Append("\r\n");
 
         var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
         return [.. encoding.GetPreamble(), .. encoding.GetBytes(csv.ToString())];

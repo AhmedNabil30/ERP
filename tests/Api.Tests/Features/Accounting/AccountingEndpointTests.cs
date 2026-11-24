@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
+using Kaff.Domain.Accounting;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
@@ -303,6 +304,33 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task F_R4_2_a_second_waiting_request_for_the_same_month_is_refused_and_the_database_agrees()
+    {
+        (Account accumulated, Account expense) = await DepreciationAccountsAsync();
+        await RegisterAssetAsync(accumulated, expense, "OtherBusinessAssets", 2_400m, "2026-04-02");
+        object body = new { month = "2026-05-10" };
+
+        HttpResponseMessage first = await SendAsync(HttpMethod.Post, "/api/treasury/depreciation-runs", _financeCompanyWide, body);
+        first.StatusCode.Should().Be(HttpStatusCode.Created);
+        HttpResponseMessage second = await SendAsync(HttpMethod.Post, "/api/treasury/depreciation-runs", _financeCompanyWide, body);
+        second.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await MessageKeyAsync(second)).Should().Be("errors.accounting.request_already_waiting");
+
+        await using (KaffDbContext writer = _database.CreateContext())
+        {
+            writer.AccountingRequests.Add(AccountingRequest.Create(
+                AccountingRequestKind.Depreciation, null, "{}", "depreciate:2026-05", _financeCompanyWide, Now).Value);
+            Func<Task> save = () => writer.SaveChangesAsync(Ct);
+            await save.Should().ThrowAsync<DbUpdateException>("the partial unique index holds even if the application check is raced");
+        }
+
+        await ApproveAsync((await JsonAsync(first)).GetProperty("requestId").GetGuid());
+        HttpResponseMessage again = await SendAsync(HttpMethod.Post, "/api/treasury/depreciation-runs", _financeCompanyWide, body);
+        again.StatusCode.Should().Be(HttpStatusCode.Created, "once decided, the month is no longer waiting");
+        await ApproveAsync((await JsonAsync(again)).GetProperty("requestId").GetGuid()); // leave nothing waiting for the other tests
+    }
+
+    [Fact]
     public async Task AC_700_D_an_asset_dated_inside_a_closed_month_is_refused()
     {
         await EnsureClosedPeriodAsync(2012, 3);
@@ -474,10 +502,10 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
         bytes.Take(3).Should().Equal(0xEF, 0xBB, 0xBF);
 
         string text = new UTF8Encoding(false).GetString(bytes, 3, bytes.Length - 3);
-        text.Should().StartWith("Code,NameAr,NameEn,Type,Class,Project,Debit,Credit");
+        text.Should().StartWith("الرمز,الاسم بالعربية,الاسم بالإنجليزية,النوع,التصنيف,المشروع,مدين,دائن");
         text.Should().Contain("حساب اختبار");
         text.Should().Contain("75.50");
-        text.Should().Contain("Total,,,,,,75.50,75.50");
+        text.Should().Contain("الإجمالي,,,,,,75.50,75.50");
     }
 
     [Fact]

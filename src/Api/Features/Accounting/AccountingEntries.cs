@@ -52,7 +52,16 @@ internal static class AccountingEntries
             return ResultExtensions.Problem(dryRun.Error);
         }
 
-        Result<AccountingRequest> created = AccountingRequest.Create(kind, projectId, json, actor, now);
+        string? subjectKey = SubjectKeyOf(kind, projectId, json, SiteTime.DateOf(now));
+        if (subjectKey is not null
+            && await database.AccountingRequests.AsNoTracking().AnyAsync(
+                request => request.Kind == kind && request.SubjectKey == subjectKey && request.Status == AccountingRequestStatus.Requested,
+                cancellationToken))
+        {
+            return ResultExtensions.Problem(AccountingErrors.RequestAlreadyWaiting);
+        }
+
+        Result<AccountingRequest> created = AccountingRequest.Create(kind, projectId, json, subjectKey, actor, now);
         if (created.IsFailure)
         {
             return ResultExtensions.Problem(created.Error);
@@ -70,6 +79,17 @@ internal static class AccountingEntries
             $"/api/treasury/accounting-requests/{created.Value.Id}",
             new RequestResponse(created.Value.Id, kind, created.Value.Status, projectId));
     }
+
+    /// <summary>Same kind and subject means the same posting: a month of depreciation, a month of one project's amortisation, one accrual's release.</summary>
+    private static string? SubjectKeyOf(AccountingRequestKind kind, Guid? projectId, string payloadJson, DateOnly today) => kind switch
+    {
+        AccountingRequestKind.AccrualRelease => $"release:{Read<AccrualReleasePayload>(payloadJson).AccrualId}",
+        AccountingRequestKind.PrepaymentAmortisation => AccountingSupport.MonthToCharge(Read<MonthPayload>(payloadJson).Month, today) is { IsSuccess: true } month
+            ? $"amortise:{projectId}:{month.Value:yyyy-MM}" : null,
+        AccountingRequestKind.Depreciation => AccountingSupport.MonthToCharge(Read<MonthPayload>(payloadJson).Month, today) is { IsSuccess: true } month
+            ? $"depreciate:{month.Value:yyyy-MM}" : null,
+        _ => null,
+    };
 
     /// <summary>
     /// The entities (accruals, postings) the request produces now. <paramref name="track"/> is false for the dry run: nothing is

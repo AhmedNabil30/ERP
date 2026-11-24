@@ -147,8 +147,8 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
         JsonElement home = JsonDocument.Parse(text).RootElement;
 
         home.GetProperty("contractValue").GetString().Should().Be("1000000.00");
-        home.GetProperty("paid").GetString().Should().Be("0.00");
-        home.GetProperty("remaining").GetString().Should().Be("1000000.00");
+        home.GetProperty("paid").GetString().Should().Be("250000.00", "the advance is client cash");
+        home.GetProperty("remaining").GetString().Should().Be("750000.00");
         home.GetProperty("pendingApprovals").GetInt32().Should().Be(0);
         home.GetProperty("sections").GetArrayLength().Should().BeGreaterThan(0);
         home.GetProperty("completion").GetString().Should().MatchRegex(@"^\d+\.\d{2}$");
@@ -159,6 +159,30 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
         }
 
         Moneys().Matches(text).Select(match => match.Groups[1].Value).Should().OnlyContain(value => value.Contains('.'));
+    }
+
+    [Fact]
+    public async Task Paid_follows_the_section_15_worked_example_after_extract_2()
+    {
+        // spec.md section 15: advance 250,000 + extract 1 cash 240,000 + extract 2 cash 120,000 = 610,000 paid.
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Account receivable = await context.Accounts.FirstAsync(a => a.ProjectId == _projectA.Id && a.Type == AccountType.ClientReceivable, Ct);
+            Account safe = await context.Accounts.SingleAsync(a => a.Id == _safeId, Ct);
+            foreach (decimal cash in new[] { 240_000m, 120_000m })
+            {
+                context.Postings.Add(Posting.Create(
+                    receivable, safe, new Money(cash), PostingType.ClientCollection,
+                    new SourceDocument(SourceDocumentType.Extract, Guid.CreateVersion7(), "EX"),
+                    new DateOnly(2026, 9, 25), _owner, Now, _projectA.Id).Value);
+            }
+
+            await context.SaveChangesAsync(Ct);
+        }
+
+        JsonElement home = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}", _portalA, null));
+        home.GetProperty("paid").GetString().Should().Be("610000.00");
+        home.GetProperty("remaining").GetString().Should().Be("390000.00");
     }
 
     // ---- R5-B: extracts ----------------------------------------------------------------------------------------------

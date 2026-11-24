@@ -186,6 +186,15 @@ public sealed class AccountingTests
     }
 
     [Fact]
+    public void An_accrual_cannot_credit_a_prepayment_account()
+    {
+        Account prepaid = Open(AccountType.Prepayment, "PRE-1");
+        Account expense = Open(AccountType.CompanyExpense, "EXP-9");
+
+        Accrual.Create(null, prepaid, expense, new Money(100m), Today, null, Actor, Now).Error.Should().Be(AccountingErrors.AccountWrongType);
+    }
+
+    [Fact]
     public void An_accrual_is_company_or_project_never_both_and_never_neither()
     {
         Guid project = Guid.CreateVersion7();
@@ -437,7 +446,7 @@ public sealed class AccountingTests
     public void The_user_who_asked_can_never_decide_and_the_owner_can()
     {
         Guid owner = Guid.CreateVersion7();
-        AccountingRequest request = AccountingRequest.Create(AccountingRequestKind.Depreciation, null, "{}", Actor, Now).Value;
+        AccountingRequest request = AccountingRequest.Create(AccountingRequestKind.Depreciation, null, "{}", null, Actor, Now).Value;
 
         request.Status.Should().Be(AccountingRequestStatus.Requested);
         request.Approve(Actor, Now).IsFailure.Should().BeTrue();
@@ -453,7 +462,7 @@ public sealed class AccountingTests
     public void A_decided_request_cannot_be_decided_again_and_a_rejection_needs_a_reason()
     {
         Guid owner = Guid.CreateVersion7();
-        AccountingRequest request = AccountingRequest.Create(AccountingRequestKind.Accrual, null, "{}", Actor, Now).Value;
+        AccountingRequest request = AccountingRequest.Create(AccountingRequestKind.Accrual, null, "{}", null, Actor, Now).Value;
 
         request.Reject(owner, " ", Now).IsFailure.Should().BeTrue();
         request.Status.Should().Be(AccountingRequestStatus.Requested);
@@ -469,8 +478,8 @@ public sealed class AccountingTests
     [Fact]
     public void A_request_needs_a_known_kind_and_a_payload()
     {
-        AccountingRequest.Create((AccountingRequestKind)99, null, "{}", Actor, Now).IsFailure.Should().BeTrue();
-        AccountingRequest.Create(AccountingRequestKind.Accrual, null, " ", Actor, Now).IsFailure.Should().BeTrue();
+        AccountingRequest.Create((AccountingRequestKind)99, null, "{}", null, Actor, Now).IsFailure.Should().BeTrue();
+        AccountingRequest.Create(AccountingRequestKind.Accrual, null, " ", null, Actor, Now).IsFailure.Should().BeTrue();
     }
 
     // ---- the new rulings describe themselves ------------------------------------------------------------

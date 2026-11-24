@@ -23,7 +23,7 @@ public sealed class OpportunityPipelineTests
     }
 
     [Fact]
-    public void The_stage_moves_forward_one_step_at_a_time_up_to_Contract_and_no_further()
+    public void The_stage_moves_forward_one_step_at_a_time_up_to_Negotiation_and_no_further()
     {
         Opportunity opportunity = Make();
 
@@ -33,7 +33,6 @@ public sealed class OpportunityPipelineTests
             OpportunityStage.SiteVisit,
             OpportunityStage.Quotation,
             OpportunityStage.Negotiation,
-            OpportunityStage.Contract,
         ];
 
         foreach (OpportunityStage next in expected)
@@ -43,7 +42,7 @@ public sealed class OpportunityPipelineTests
         }
 
         opportunity.AdvanceStage(Start).Error.Should().Be(SalesErrors.AlreadyAtLastStage);
-        opportunity.Stage.Should().Be(OpportunityStage.Contract);
+        opportunity.Stage.Should().Be(OpportunityStage.Negotiation, "Contract comes only from conversion to a project");
     }
 
     [Fact]

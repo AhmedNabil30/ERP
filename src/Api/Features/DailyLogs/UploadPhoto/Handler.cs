@@ -68,7 +68,8 @@ internal static class Handler
             return ResultExtensions.Problem(DailyLogErrors.PhotoNotAnImage);
         }
 
-        Guid photoId = await store.SaveAsync(projectId, bytes, contentType, cancellationToken);
+        // No location, device or author travels with the photo (R5-C AC-C-4): strip before it is stored.
+        Guid photoId = await store.SaveAsync(projectId, SitePhotoMetadata.Strip(bytes.Span, contentType), contentType, cancellationToken);
         string reference = photoId.ToString();
         string url = PhotoRoute.Of(projectId, reference);
 

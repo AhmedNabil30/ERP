@@ -106,6 +106,39 @@ public sealed class MaterialAdvanceReadTests : IAsyncLifetime
         (await SendAsync(project, _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    [Fact]
+    public async Task A_site_engineer_not_assigned_to_the_project_is_refused()
+    {
+        Guid project = await NewProjectAsync(issued: 10_000m, recovered: 0m);
+        User stranger = Make("ma-out", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            context.Users.Add(stranger);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        (await SendAsync(project, stranger.Id)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task A_reversal_of_the_issue_subtracts_from_what_was_issued()
+    {
+        Guid project = await NewProjectAsync(issued: 100_000m, recovered: 0m);
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Posting issue = await context.Postings.SingleAsync(posting => posting.ProjectId == project && posting.Type == PostingType.MaterialAdvanceIssue, Ct);
+            Account from = await context.Accounts.SingleAsync(account => account.Id == issue.FromAccountId, Ct);
+            Account to = await context.Accounts.SingleAsync(account => account.Id == issue.ToAccountId, Ct);
+            context.Postings.Add(Posting.Reverse(issue, from, to, Day, _owner, Now).Value);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        JsonElement read = await ReadAsync(project, _supervisor);
+
+        Parse(read, "issued").Should().Be(0m);
+        Parse(read, "outstanding").Should().Be(0m);
+    }
+
     // ---- helpers ----
 
     private static decimal Parse(JsonElement read, string name) =>

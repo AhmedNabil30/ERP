@@ -86,6 +86,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("status");
 
+                    b.Property<string>("SubjectKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("subject_key");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DecidedByUserId");
@@ -93,6 +98,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProjectId");
 
                     b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("Kind", "SubjectKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_accounting_requests_waiting_subject")
+                        .HasFilter("status = 'Requested' AND subject_key IS NOT NULL");
 
                     b.HasIndex("Status", "RequestedAt")
                         .HasDatabaseName("ix_accounting_requests_status");

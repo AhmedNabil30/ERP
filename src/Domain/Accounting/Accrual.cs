@@ -80,7 +80,10 @@ public sealed class Accrual : Entity
         ArgumentNullException.ThrowIfNull(accruedExpense);
         ArgumentNullException.ThrowIfNull(expense);
 
-        Result accounts = CheckAccounts(projectId, accruedExpense, expense);
+        // KAFF-701 AC1: the credit side is the AccruedExpense liability. CheckAccounts also admits Prepayment for schedules.
+        Result accounts = accruedExpense.Type == AccountType.AccruedExpense
+            ? CheckAccounts(projectId, accruedExpense, expense)
+            : Result.Failure(AccountingErrors.AccountWrongType);
         if (accounts.IsFailure)
         {
             return Result.Failure<AccrualWithPosting>(accounts.Error);

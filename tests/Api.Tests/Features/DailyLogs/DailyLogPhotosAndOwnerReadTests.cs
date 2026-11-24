@@ -79,6 +79,39 @@ public sealed partial class DailyLogTests
     }
 
     [Fact]
+    public async Task An_uploaded_photo_is_stored_and_served_without_its_metadata()
+    {
+        byte[] gps = [.. "Exif\0\0GPSLatitude"u8];
+        byte[] jpegWithExif =
+        [
+            0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 1, 2, 3, 4, 5, 6, 7, 8,
+            0xFF, 0xE1, 0x00, (byte)(gps.Length + 2), .. gps,
+            0xFF, 0xFE, 0x00, 0x05, 65, 66, 67,
+            0xFF, 0xDA, 0x00, 0x03, 0x00, 9, 9, 0xFF, 0xD9,
+        ];
+        byte[] pngWithText =
+        [
+            .. Png[..8],
+            0, 0, 0, 0, .. "IHDR"u8, 0, 0, 0, 0,
+            0, 0, 0, 3, .. "tEXt"u8, 71, 80, 83, 0, 0, 0, 0,
+            0, 0, 0, 0, .. "IEND"u8, 0, 0, 0, 0,
+        ];
+
+        foreach ((byte[] original, string marker) in new[] { (jpegWithExif, "GPSLatitude"), (pngWithText, "tEXt") })
+        {
+            (Guid project, string reference) = await RecordedPhotoAsync(original);
+            HttpResponseMessage download = await SendAsync(HttpMethod.Get, $"{Photos(project)}/{reference}", _engineerA, null);
+            byte[] served = await download.Content.ReadAsByteArrayAsync(Ct);
+
+            System.Text.Encoding.Latin1.GetString(served).Should().NotContain(marker);
+            served.Length.Should().BeLessThan(original.Length);
+            Directory.GetFiles(_photoRoot, "*", SearchOption.AllDirectories)
+                .Select(file => System.Text.Encoding.Latin1.GetString(File.ReadAllBytes(file)))
+                .Should().NotContain(text => text.Contains(marker, StringComparison.Ordinal), "the stored bytes carry none either");
+        }
+    }
+
+    [Fact]
     public async Task The_stored_file_is_named_by_the_server_and_the_clients_name_and_type_do_not_matter()
     {
         (Guid project, _) = await NewActiveProjectAsync();
