@@ -69,7 +69,7 @@ describe('ExtractCollectPage (E5)', () => {
     const { fixture, root, collect } = await open(extract({ status: 'Issued', collection: OPEN }, { recordCollection: true }));
     (byTestId(root, 'collect-method-Cash') as HTMLInputElement).click();
     await settle(fixture);
-    type(byTestId(root, 'collect-date'), '2999-01-01');
+    type(byTestId(root, 'collect-date'), '01/01/2999');
     type(byTestId(root, 'collect-reference'), 'R-1');
     type(byTestId(root, 'collect-cash'), '10');
     primary(fixture)?.click();

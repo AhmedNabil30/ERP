@@ -10,12 +10,8 @@
   </div>
 
   <div class="filters">
-    <kaff-field labelKey="accounting.field.from" controlId="trial-from" hintKey="accounting.hint.date_format">
-      <input id="trial-from" type="date" lang="en-GB" dir="ltr" data-testid="trial-from" [value]="from()" (change)="setFrom($event)" />
-    </kaff-field>
-    <kaff-field labelKey="accounting.field.to" controlId="trial-to" hintKey="accounting.hint.date_format">
-      <input id="trial-to" type="date" lang="en-GB" dir="ltr" data-testid="trial-to" [value]="to()" (change)="setTo($event)" />
-    </kaff-field>
+    <kaff-date-field labelKey="accounting.field.from" controlId="trial-from" testId="trial-from" [value]="from()" (valueChange)="setFrom($event)" />
+    <kaff-date-field labelKey="accounting.field.to" controlId="trial-to" testId="trial-to" [value]="to()" (valueChange)="setTo($event)" />
   </div>
 
   @if (exportFailure(); as key) {

@@ -36,13 +36,13 @@ describe('ExtractNewPage (E2)', () => {
 
   it('starts the period the day after the last extract and sends the period only', async () => {
     const { fixture, root, prepare } = await open([row(3, 'Issued')]);
-    expect((byTestId(root, 'extract-from') as HTMLInputElement).value).toBe('2026-10-01');
+    expect((byTestId(root, 'extract-from') as HTMLInputElement).value).toBe('01/10/2026');
     expect(byTestId(root, 'extract-new-last')?.textContent).toContain('"number":3');
     primary(fixture)?.click();
     await settle(fixture);
     expect(prepare).not.toHaveBeenCalled();
     expect(root.textContent).toContain('extract.new.to_required');
-    type(byTestId(root, 'extract-to'), '2026-10-31');
+    type(byTestId(root, 'extract-to'), '31/10/2026');
     primary(fixture)?.click();
     await settle(fixture);
     expect(prepare).toHaveBeenCalledWith('p-1', '2026-10-01', '2026-10-31');
@@ -73,8 +73,8 @@ describe('ExtractNewPage (E2)', () => {
   it('shows the server refusal when another extract opened meanwhile', async () => {
     const prepare = vi.fn().mockRejectedValue(new HttpErrorResponse({ status: 409, error: { messageKey: 'errors.extract.another_extract_open' } }));
     const { fixture, root } = await open([], prepare);
-    type(byTestId(root, 'extract-from'), '2026-10-01');
-    type(byTestId(root, 'extract-to'), '2026-10-31');
+    type(byTestId(root, 'extract-from'), '01/10/2026');
+    type(byTestId(root, 'extract-to'), '31/10/2026');
     primary(fixture)?.click();
     await settle(fixture);
     expect(prepare).toHaveBeenCalled();

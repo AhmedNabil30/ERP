@@ -153,15 +153,13 @@
           />
         </kaff-field>
 
-        <kaff-field labelKey="hr.employee.field.hired_on" controlId="employee-field-hired-on">
-          <input
-            id="employee-field-hired-on"
-            type="date"
-            data-testid="employee-field-hired-on"
-            [value]="draft().hiredOn"
-            (input)="onInput('hiredOn', $event)"
-          />
-        </kaff-field>
+        <kaff-date-field
+          labelKey="hr.employee.field.hired_on"
+          controlId="employee-field-hired-on"
+          testId="employee-field-hired-on"
+          [value]="draft().hiredOn"
+          (valueChange)="onHiredOn($event)"
+        />
       }
     }
   </div>

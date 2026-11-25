@@ -29,6 +29,7 @@ import { KaffFigurePair } from '../../../shared/kaff-figure-pair/kaff-figure-pai
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffSelect, SelectOption } from '../../../shared/kaff-select/kaff-select';
 import { PhoneMatch } from '../../../shared/phone-match';
+import { KaffDateField } from '../../../shared/kaff-date-field/kaff-date-field';
 
 /** What the panel is open on: a blank register form, or one person's file with the list row it came from. */
 export type EmployeePanelTarget =
@@ -87,6 +88,7 @@ function orNull(value: string): string | null {
 @Component({
   selector: 'kaff-employee-panel',
   imports: [
+    KaffDateField,
     DuplicatePhoneWarning,
     KaffBadge,
     KaffBanner,
@@ -266,6 +268,10 @@ export class EmployeePanel {
   protected onInput(field: keyof Draft, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.draft.update((current) => ({ ...current, [field]: value }));
+  }
+
+  protected onHiredOn(hiredOn: string): void {
+    this.draft.update((current) => ({ ...current, hiredOn }));
   }
 
   protected onBab(babId: string): void {

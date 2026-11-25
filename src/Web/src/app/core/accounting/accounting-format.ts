@@ -5,7 +5,7 @@ export function dmy(iso: string | null): string {
   return dmyOf(iso);
 }
 
-/** An `<input type="month">` value `yyyy-MM` to the first day of that month. */
+/** A `kaff-date-field` month value `yyyy-MM` to the first day of that month. */
 export function monthStart(month: string): string {
   return `${month}-01`;
 }

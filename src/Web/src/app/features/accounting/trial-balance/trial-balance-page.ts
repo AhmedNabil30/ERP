@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, TemplateRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { KaffDateField } from '../../../shared/kaff-date-field/kaff-date-field';
 
 import { AccountingApi, TrialBalance, TrialBalanceLine } from '../../../core/accounting/accounting.api';
 import { isZero } from '../../../core/accounting/accounting-format';
@@ -7,7 +8,6 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
-import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
@@ -22,7 +22,8 @@ import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
  */
 @Component({
   selector: 'kaff-trial-balance-page',
-  imports: [KaffBanner, KaffButton, KaffField, KaffFigure, KaffState, KaffTable, KaffTableRow],
+  imports: [
+    KaffDateField, KaffBanner, KaffButton, KaffFigure, KaffState, KaffTable, KaffTableRow],
   templateUrl: './trial-balance-page.html',
   styleUrl: '../accounting.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,13 +71,13 @@ export class TrialBalancePage {
     return (event.target as HTMLInputElement).value;
   }
 
-  protected async setFrom(event: Event): Promise<void> {
-    this.from.set(this.val(event));
+  protected async setFrom(value: string): Promise<void> {
+    this.from.set(value);
     await this.reload();
   }
 
-  protected async setTo(event: Event): Promise<void> {
-    this.to.set(this.val(event));
+  protected async setTo(value: string): Promise<void> {
+    this.to.set(value);
     await this.reload();
   }
 

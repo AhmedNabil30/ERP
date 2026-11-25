@@ -127,9 +127,13 @@
       />
     </kaff-field>
 
-    <kaff-field labelKey="accounting.field.purchase_date" controlId="assets-date" [required]="true">
-      <input id="assets-date" type="date" lang="en-GB" dir="ltr" data-testid="assets-date" [value]="date()" (input)="date.set(val($event))" />
-    </kaff-field>
+    <kaff-date-field
+      labelKey="accounting.field.purchase_date"
+      controlId="assets-date"
+      [required]="true"
+      testId="assets-date"
+      [(value)]="date"
+    />
   </div>
   <div panelFooter class="act">
     @if (!accountsMissing()) {
@@ -173,9 +177,14 @@
     @if (refusal(); as key) {
       <kaff-banner tone="refusal" icon="alert" testId="assets-run-refusal">{{ i18n.t(key) }}</kaff-banner>
     }
-    <kaff-field labelKey="accounting.field.month" controlId="assets-month" [required]="true">
-      <input id="assets-month" type="month" dir="ltr" data-testid="assets-month" [value]="month()" (input)="month.set(val($event))" />
-    </kaff-field>
+    <kaff-date-field
+      labelKey="accounting.field.month"
+      controlId="assets-month"
+      [required]="true"
+      [month]="true"
+      testId="assets-month"
+      [(value)]="month"
+    />
   </div>
   <div panelFooter class="act">
     <kaff-button variant="primary" testId="assets-run-save" [busy]="busy()" (clicked)="saveRun()">{{ i18n.t('accounting.action.send') }}</kaff-button>

@@ -265,9 +265,11 @@ describe('DailyLogReviewPage', () => {
 
     expect(href()).toContain(`date=${today}`);
 
+    el(root, 'daily-log-day-other-toggle')!.click();
+    fixture.detectChanges();
     const input = el(root, 'daily-log-day-other') as HTMLInputElement;
-    input.value = '2026-10-02';
-    input.dispatchEvent(new Event('change'));
+    input.value = '02/10/2026';
+    input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     await flush(fixture);
 
@@ -280,9 +282,11 @@ describe('DailyLogReviewPage', () => {
     const root: HTMLElement = fixture.nativeElement;
     expect(api.reads).toHaveLength(1);
 
+    el(root, 'daily-log-day-other-toggle')!.click();
+    fixture.detectChanges();
     const input = el(root, 'daily-log-day-other') as HTMLInputElement;
-    input.value = '2026-10-02';
-    input.dispatchEvent(new Event('change'));
+    input.value = '02/10/2026';
+    input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     await flush(fixture);
 

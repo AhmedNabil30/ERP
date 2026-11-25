@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { KaffDateField } from '../../../shared/kaff-date-field/kaff-date-field';
 
 import { AccountingApi, OverheadLine, OverheadSpread } from '../../../core/accounting/accounting.api';
 import { monthStart, thisMonth } from '../../../core/accounting/accounting-format';
@@ -7,7 +8,6 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
-import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
@@ -22,7 +22,8 @@ import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
  */
 @Component({
   selector: 'kaff-overhead-page',
-  imports: [KaffBanner, KaffButton, KaffField, KaffFigure, KaffState, KaffTable, KaffTableRow],
+  imports: [
+    KaffDateField, KaffBanner, KaffButton, KaffFigure, KaffState, KaffTable, KaffTableRow],
   templateUrl: './overhead-page.html',
   styleUrl: '../accounting.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,8 +60,7 @@ export class OverheadPage {
     return line.projectName ?? this.names().get(line.projectId) ?? line.projectCode;
   }
 
-  protected async setMonth(event: Event): Promise<void> {
-    const value = (event.target as HTMLInputElement).value;
+  protected async setMonth(value: string): Promise<void> {
     if (value) {
       this.month.set(value);
       await this.reload();

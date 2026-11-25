@@ -6,32 +6,15 @@
     nothing else that S-015 draws — the action chips and the "Search actor or entity" box have no
     server parameter behind them and are recorded as findings rather than filtered in the browser.
 
-    `<input type="date">` is the platform's own control: a picker written here would be a second
-    calendar to keep Gregorian, and S-015 pins `dir=ltr` and Gregorian for exactly this field.
+    The dates are the kit's `kaff-date-field`: dd/MM/yyyy, Gregorian, typed left to right.
   -->
   <form class="range" (submit)="$event.preventDefault(); onSubmitRange()">
     <div class="range-field">
-      <label class="range-label" for="audit-from">{{ i18n.t('audit.field.from') }}</label>
-      <input
-        id="audit-from"
-        class="range-input"
-        type="date"
-        dir="ltr"
-        data-testid="audit-from"
-        [formField]="rangeForm.from"
-      />
+      <kaff-date-field labelKey="audit.field.from" controlId="audit-from" testId="audit-from" [value]="rangeForm.from().value()" (valueChange)="rangeForm.from().value.set($event)" />
     </div>
 
     <div class="range-field">
-      <label class="range-label" for="audit-to">{{ i18n.t('audit.field.to') }}</label>
-      <input
-        id="audit-to"
-        class="range-input"
-        type="date"
-        dir="ltr"
-        data-testid="audit-to"
-        [formField]="rangeForm.to"
-      />
+      <kaff-date-field labelKey="audit.field.to" controlId="audit-to" testId="audit-to" [value]="rangeForm.to().value()" (valueChange)="rangeForm.to().value.set($event)" />
     </div>
 
     <kaff-button variant="primary" type="submit" testId="audit-apply">

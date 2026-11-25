@@ -9,19 +9,15 @@
     [(value)]="method"
   />
   <div class="g2">
-    <kaff-field labelKey="collection.date" [controlId]="testIdPrefix() + '-date'" [required]="true" [errorKey]="errors().date ?? (refusalKey() === 'errors.treasury.posting_date_out_of_range' ? 'collection.date_future' : null)" #df="kaffField">
-      <input
-        type="date"
-        dir="ltr"
-        [id]="testIdPrefix() + '-date'"
-        [max]="today"
-        [value]="date()"
-        [attr.aria-invalid]="errors().date ? 'true' : null"
-        [attr.aria-describedby]="df.describedById()"
-        [attr.data-testid]="testIdPrefix() + '-date'"
-        (input)="onDate($event)"
-      />
-    </kaff-field>
+    <kaff-date-field
+      labelKey="collection.date"
+      [controlId]="testIdPrefix() + '-date'"
+      [required]="true"
+      [errorKey]="errors().date ?? (refusalKey() === 'errors.treasury.posting_date_out_of_range' ? 'collection.date_future' : null)"
+      [testId]="testIdPrefix() + '-date'"
+      [value]="date()"
+      (valueChange)="onDate($event)"
+    />
     @if (method() !== '') {
       <kaff-field [labelKey]="referenceKey()" [controlId]="testIdPrefix() + '-reference'" [required]="true" [errorKey]="errors().reference" #rf="kaffField">
         <input

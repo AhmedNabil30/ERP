@@ -397,7 +397,7 @@ describe('CrewPage', () => {
       const root: HTMLElement = fixture.nativeElement;
 
       expect(api.reads).toContain(`all ${dateOf(9)}`);
-      expect((el(root, 'crew-day-other') as HTMLInputElement).value).toBe(dateOf(9));
+      expect((el(root, 'crew-day-other') as HTMLInputElement).value).toBe(dateOf(9).split('-').reverse().join('/'));
       expect(chipPressed(root, 0)).toBe('false');
       expect(el(root, 'crew-saved-0')).not.toBeNull();
     });

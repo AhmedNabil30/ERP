@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, TemplateRef, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { KaffDateField } from '../../../shared/kaff-date-field/kaff-date-field';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { ExtractQuantityRow, ExtractStatus, ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
-import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
 import { KaffQuantityTable } from '../../../shared/kaff-quantity-table/kaff-quantity-table';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
@@ -30,7 +30,8 @@ export function nextDay(value: string): string {
  */
 @Component({
   selector: 'kaff-extract-new-page',
-  imports: [RouterLink, KaffBanner, KaffButton, KaffField, KaffPageHead, KaffQuantityTable, KaffState, KaffStatusPill],
+  imports: [
+    KaffDateField, RouterLink, KaffBanner, KaffButton, KaffPageHead, KaffQuantityTable, KaffState, KaffStatusPill],
   templateUrl: './extract-new-page.html',
   styleUrl: '../chain-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

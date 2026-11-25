@@ -44,12 +44,8 @@
       }
       <h2 class="sec-h">{{ i18n.t('extract.list.column.period') }}</h2>
       <div class="g2">
-        <kaff-field labelKey="extract.new.from" controlId="extract-from" [required]="true" [errorKey]="errors().from" #ff="kaffField">
-          <input id="extract-from" type="date" dir="ltr" data-testid="extract-from" [value]="from()" [attr.aria-invalid]="errors().from ? 'true' : null" [attr.aria-describedby]="ff.describedById()" (input)="from.set($any($event.target).value)" />
-        </kaff-field>
-        <kaff-field labelKey="extract.new.to" controlId="extract-to" [required]="true" [errorKey]="errors().to" #tf="kaffField">
-          <input id="extract-to" type="date" dir="ltr" data-testid="extract-to" [value]="to()" [attr.aria-invalid]="errors().to ? 'true' : null" [attr.aria-describedby]="tf.describedById()" (input)="to.set($any($event.target).value)" />
-        </kaff-field>
+        <kaff-date-field labelKey="extract.new.from" controlId="extract-from" [required]="true" [errorKey]="errors().from" testId="extract-from" [(value)]="from" />
+        <kaff-date-field labelKey="extract.new.to" controlId="extract-to" [required]="true" [errorKey]="errors().to" testId="extract-to" [(value)]="to" />
       </div>
       @if (preview().length > 0) {
         <h2 class="sec-h">{{ i18n.t('extract.qty.heading') }}</h2>

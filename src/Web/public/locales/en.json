@@ -2487,6 +2487,10 @@
   "portal.co.before": "Contract value before",
   "portal.co.after": "Contract value after",
   "accounting.request.lines": "Entries: {count}",
-  "accounting.hint.date_format": "day/month/year",
-  "portal.home.due_now": "Due now"
+  "portal.home.due_now": "Due now",
+  "date.invalid": "Enter a valid date.",
+  "date.min": "The date cannot be before {date}.",
+  "date.max": "The date cannot be after {date}.",
+  "date.placeholder.day": "dd/MM/yyyy",
+  "date.placeholder.month": "MM/yyyy"
 }

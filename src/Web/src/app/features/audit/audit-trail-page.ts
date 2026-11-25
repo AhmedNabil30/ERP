@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormField, form } from '@angular/forms/signals';
+import { form } from '@angular/forms/signals';
+import { KaffDateField } from '../../shared/kaff-date-field/kaff-date-field';
 
 import { toProblem } from '../../core/api/problem-details';
 import { AuditApi, AuditEntry, AuditSnapshot } from '../../core/audit/audit.api';
@@ -69,7 +70,8 @@ export interface AuditChange {
  */
 @Component({
   selector: 'kaff-audit-trail-page',
-  imports: [FormField, KaffButton, KaffState, KaffTable, KaffTableRow],
+  imports: [
+    KaffDateField, KaffButton, KaffState, KaffTable, KaffTableRow],
   templateUrl: './audit-trail-page.html',
   styleUrl: './audit-trail-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

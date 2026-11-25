@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { KaffDateField } from '../../../shared/kaff-date-field/kaff-date-field';
 
 import { CollectRequest, CollectionMethod } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -47,7 +48,8 @@ const NONE: Errors = { method: null, date: null, reference: null, cash: null, wi
  */
 @Component({
   selector: 'kaff-collection-form',
-  imports: [KaffChoiceGroup, KaffField, KaffMoneyField],
+  imports: [
+    KaffDateField,KaffChoiceGroup, KaffField, KaffMoneyField],
   templateUrl: './collection-form.html',
   styleUrl: '../chain-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -112,8 +114,8 @@ export class CollectionForm {
     return { method, date, reference, cashReceived: cash, withheldAtSource: this.withholding() ? withheld : '0' };
   }
 
-  protected onDate(event: Event): void {
-    this.date.set((event.target as HTMLInputElement).value);
+  protected onDate(value: string): void {
+    this.date.set(value);
     this.errors.update((e) => ({ ...e, date: null }));
   }
 

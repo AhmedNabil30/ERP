@@ -4,9 +4,14 @@
   </div>
 
   <div class="filters">
-    <kaff-field labelKey="accounting.field.month" controlId="overhead-month">
-      <input id="overhead-month" type="month" dir="ltr" data-testid="overhead-month" [value]="month()" (change)="setMonth($event)" />
-    </kaff-field>
+    <kaff-date-field
+      labelKey="accounting.field.month"
+      controlId="overhead-month"
+      [month]="true"
+      testId="overhead-month"
+      [value]="month()"
+      (valueChange)="setMonth($event)"
+    />
   </div>
 
   @if (failure(); as key) {

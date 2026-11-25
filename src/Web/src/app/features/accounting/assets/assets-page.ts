@@ -29,6 +29,7 @@ import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 import { KaffWaitingLine } from '../../../shared/kaff-waiting-line/kaff-waiting-line';
+import { KaffDateField } from '../../../shared/kaff-date-field/kaff-date-field';
 
 type Sheet = 'add' | 'rate' | 'run' | null;
 
@@ -48,6 +49,7 @@ const CATEGORY_KEY: Readonly<Record<AssetCategory, string>> = {
 @Component({
   selector: 'kaff-assets-page',
   imports: [
+    KaffDateField,
     KaffBanner,
     KaffButton,
     KaffDetailPanel,

@@ -31,6 +31,7 @@ import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 import { KaffWaitingLine } from '../../../shared/kaff-waiting-line/kaff-waiting-line';
+import { KaffDateField } from '../../../shared/kaff-date-field/kaff-date-field';
 
 type Kind = 'accrual' | 'prepayment';
 type Sheet = 'add' | 'amortise' | null;
@@ -58,6 +59,7 @@ interface Row {
 @Component({
   selector: 'kaff-accruals-page',
   imports: [
+    KaffDateField,
     KaffBanner,
     KaffButton,
     KaffConfirmDialog,

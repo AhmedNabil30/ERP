@@ -159,20 +159,13 @@
       </kaff-field>
     }
 
-    <kaff-field
+    <kaff-date-field
       [labelKey]="kind() === 'accrual' ? 'accounting.field.date' : 'accounting.field.first_month'"
       controlId="accruals-date"
       [required]="true"
-    >
-      <input
-        id="accruals-date"
-        type="date" lang="en-GB"
-        dir="ltr"
-        data-testid="accruals-date"
-        [value]="date()"
-        (input)="date.set(val($event))"
-      />
-    </kaff-field>
+      testId="accruals-date"
+      [(value)]="date"
+    />
   </div>
   <div panelFooter class="act">
     @if (!accountsMissing()) {
@@ -192,16 +185,14 @@
     @if (refusal(); as key) {
       <kaff-banner tone="refusal" icon="alert" testId="accruals-amortise-refusal">{{ i18n.t(key) }}</kaff-banner>
     }
-    <kaff-field labelKey="accounting.field.month" controlId="accruals-month" [required]="true">
-      <input
-        id="accruals-month"
-        type="month"
-        dir="ltr"
-        data-testid="accruals-month"
-        [value]="month()"
-        (input)="month.set(val($event))"
-      />
-    </kaff-field>
+    <kaff-date-field
+      labelKey="accounting.field.month"
+      controlId="accruals-month"
+      [required]="true"
+      [month]="true"
+      testId="accruals-month"
+      [(value)]="month"
+    />
   </div>
   <div panelFooter class="act">
     <kaff-button variant="primary" testId="accruals-amortise-save" [busy]="busy()" (clicked)="saveAmortise()">
